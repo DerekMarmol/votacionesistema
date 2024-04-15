@@ -129,6 +129,25 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             display: none;
         }
+        #recuentoVotosContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Columnas automáticas con un mínimo de 150px */
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .grupoVoto {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px; /* Agregamos un margen inferior para separar los grupos */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .grupoVoto p {
+            margin: 0; /* Eliminamos el margen interno del párrafo */
+            font-size: 16px; /* Ajustamos el tamaño de fuente */
+            color: #555; /* Color de texto menos llamativo */
+        }
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -165,7 +184,10 @@
         <button id="abrirVotacion">Abrir Votación</button>
         <button id="cerrarVotacion" style="display: none;">Cerrar Votación</button>
         <button id="reiniciarVotaciones" style="display: none;">Reiniciar Votaciones</button>
-        <div id="recuentoVotos" style="display: none;"></div>
+        <div id="recuentoVotos" style="display: none;">
+            <h3>Recuento de Votos:</h3>
+            <div id="recuentoVotosContainer"></div>
+        </div>
     {% endif %}
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
@@ -202,12 +224,29 @@
         
             // Actualizar y mostrar el recuento de votos
             function actualizarRecuentoVotos(recuentoVotos) {
-                const recuentoVotosDiv = document.getElementById('recuentoVotos');
-                recuentoVotosDiv.innerHTML = '<h3>Recuento de Votos:</h3>';
-                for (const [grupo, votos] of Object.entries(recuentoVotos)) {
-                    recuentoVotosDiv.innerHTML += `<p>Grupo ${grupo}: ${votos} votos</p>`;
+                let recuentoVotosContainer = document.getElementById('recuentoVotosContainer');
+                if (!recuentoVotosContainer) {
+                    // Si el contenedor no existe, lo creamos y lo agregamos al DOM
+                    recuentoVotosContainer = document.createElement('div');
+                    recuentoVotosContainer.id = 'recuentoVotosContainer';
+                    document.body.appendChild(recuentoVotosContainer);
+                } else {
+                    // Si el contenedor existe, lo vaciamos para actualizar los votos
+                    recuentoVotosContainer.innerHTML = '';
                 }
-                recuentoVotosDiv.style.display = 'block'; // Mostrar el recuento de votos
+
+                for (const [grupo, votos] of Object.entries(recuentoVotos)) {
+                    const grupoVoto = document.createElement('div');
+                    grupoVoto.classList.add('grupoVoto');
+                    grupoVoto.innerHTML = `<p>Grupo ${grupo}: ${votos} votos</p>`;
+                    recuentoVotosContainer.appendChild(grupoVoto);
+                }
+
+                // Mostramos el contenedor del recuento de votos
+                const recuentoVotosDiv = document.getElementById('recuentoVotos');
+                if (recuentoVotosDiv) {
+                    recuentoVotosDiv.style.display = 'block';
+                }
             }
         
             // Manejar la apertura de votación
