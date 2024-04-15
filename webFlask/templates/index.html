@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inicio de Sesión por Reconocimiento Facial</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        img {
+            display: block; /* Esto asegura que la imagen no esté en línea con otros elementos */
+            margin: 0 auto; /* Esto centra la imagen horizontalmente */
+            width: 150px; /* Ajusta esto para cambiar el tamaño de la imagen */
+            height: auto; /* Esto mantiene la proporción de la imagen al cambiar el ancho */
+            margin-bottom: 20px;
+        }
+        video {
+            max-width: 320px; /* Ajusta el ancho máximo como prefieras */
+            max-height: 240px; /* Ajusta la altura máxima como prefieras */
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        video, canvas {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e2e2e2;
+            border-radius: 5px;
+        }
+        input[type=email], input[type=password] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: #5cb85c;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" id="logo"  width="300">
+        <h1>Inicio de Sesión</h1>
+        <video id="video" width="640" height="480" autoplay></video>
+        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+        <div id="result"></div>
+
+        <input type="email" id="email" name="email" placeholder="Correo electrónico" required>
+        <input type="password" id="password" placeholder="Contraseña">
+        <button onclick="verificarInicio()">Iniciar Sesión con Reconocimiento Facial</button>
+    </div>
+    <script>
+        // Elementos del DOM
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const resultDiv = document.getElementById('result');
+    
+        // Acceder a la cámara web
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(error => {
+                console.error('Error al acceder a la cámara web:', error);
+            });
+    
+        // Función para capturar una imagen de la cámara web
+        function captureImage() {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            return new Promise((resolve, reject) => {
+                canvas.toBlob((blob) => {
+                    // Borrar la imagen capturada del canvas
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    resolve(blob);
+                }, 'image/jpeg');
+            });
+        }
+    
+        // Función para enviar la imagen al servidor y verificar el inicio de sesión
+        async function verificarInicio() {
+            try {
+                const imagenBlob = await captureImage();
+                const formData = new FormData();
+                formData.append('imagen', imagenBlob);
+                const emailInput = document.getElementById('email').value;
+                const passwordInput = document.getElementById('password').value;
+                formData.append('email', emailInput);
+                formData.append('password', passwordInput);
+
+    
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+    
+                if (!response.ok) {
+                    throw new Error(`Error en la respuesta del servidor: ${response.status}`);
+                }
+    
+                const data = await response.json();
+                if (data.resultado === 'Coincide') {
+                    // Si la coincidencia es exitosa, redirige a la página de votación
+                    window.location.href = '/votacion';
+                } else {
+                    // Si la coincidencia falla, muestra un mensaje de error
+                    resultDiv.textContent = 'Inicio de sesión fallido: No se detectó coincidencia facial.';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>    
+</body>
+</html>
